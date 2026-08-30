@@ -2,17 +2,20 @@
 #ifndef STRUCTURE_H
 #define STRUCTURE_H
 
-typedef struct manager {
-    char name[25];
-    int (*update)(void);
-    void (*find)(char *result, char searchstring[]);
-    void (*search)(char *result, char searchstring[]);
-    int (*delete)(char searchstring[]);
-} manager;
+#include <stdbool.h>
 
 typedef struct package {
+    char mana[25];
     char name[50];
     char version[10];
 } package;
+
+typedef struct manager {
+    char name[25];
+    bool (*update)(void);
+    package (*find)(char *result, char searchstring[]);
+    package (*search)(char searchstring[]);
+    bool (*delete)(char searchstring[]);
+} manager;
 
 #endif

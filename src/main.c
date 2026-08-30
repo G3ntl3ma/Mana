@@ -4,6 +4,11 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "../include/update.h"
+#include "../include/find.h"
+#include "../include/search.h"
+#include "../include/delete.h"
+
 #define VERSION "0.1.0"
 
 int main(int argc, char *argv[]){
