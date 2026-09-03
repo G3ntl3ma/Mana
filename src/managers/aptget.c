@@ -204,13 +204,125 @@ package SearchApt(char searchString[]){
 }
 
 bool InstallApt(char searchString[]){
-    printf("InstallApt function is not implemented yet: %s\n", searchString);
-    return false;
+    int pipefd[2];
+
+    if (pipe(pipefd) == -1){
+        fprintf(stderr, "Error: pipe failed\n");
+        return false;
+    }
+
+    pid_t pid = fork();
+    if(pid == -1){
+        fprintf(stderr, "Error: fork failed\n");
+        close(pipefd[0]);
+        close(pipefd[1]);
+        return false;
+    }
+
+    if (pid == 0){
+        close(pipefd[0]);
+        if(dup2(pipefd[1], STDOUT_FILENO) == -1){
+            fprintf(stderr, "Error: dup2 failed\n");
+            exit(EXIT_FAILURE);
+        }
+        close(pipefd[1]);
+
+        char *args[] = {
+            "/usr/bin/sudo",
+            "apt-get",
+            "install",
+            "-y",
+            searchString,
+            NULL
+        };
+        execv(args[0], args);
+
+        fprintf(stderr, "Error: execv failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    close(pipefd[1]);
+    char buf[BUFFER_SIZE] = {0};
+    size_t used = 0;
+    ssize_t n;
+
+    while((n = read(pipefd[0], buf + used, sizeof(buf) - 1 - used)) > 0){
+        used += (size_t)n;
+    }
+    buf[used] = '\0';
+    close(pipefd[0]);
+
+    int status;
+    waitpid(pid, &status, 0);
+    if(WIFEXITED(status) && WEXITSTATUS(status) == 0){
+        //I am assuming the package exists, since they need to be found with search first
+        return true;
+
+    } else {
+        printf("Exit status not successfull\n");
+        return false;
+    }
 }
 
 bool DeleteApt(char searchString[]){
-    printf("DeleteApt function is not implemented yet: %s\n", searchString);
-    return false;
+    int pipefd[2];
+
+    if (pipe(pipefd) == -1){
+        fprintf(stderr, "Error: pipe failed\n");
+        return false;
+    }
+
+    pid_t pid = fork();
+    if(pid == -1){
+        fprintf(stderr, "Error: fork failed\n");
+        close(pipefd[0]);
+        close(pipefd[1]);
+        return false;
+    }
+
+    if (pid == 0){
+        close(pipefd[0]);
+        if(dup2(pipefd[1], STDOUT_FILENO) == -1){
+            fprintf(stderr, "Error: dup2 failed\n");
+            exit(EXIT_FAILURE);
+        }
+        close(pipefd[1]);
+
+        char *args[] = {
+            "/usr/bin/sudo",
+            "apt-get",
+            "remove",
+            "-y",
+            searchString,
+            NULL
+        };
+        execv(args[0], args);
+
+        fprintf(stderr, "Error: execv failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    close(pipefd[1]);
+    char buf[BUFFER_SIZE] = {0};
+    size_t used = 0;
+    ssize_t n;
+
+    while((n = read(pipefd[0], buf + used, sizeof(buf) - 1 - used)) > 0){
+        used += (size_t)n;
+    }
+    buf[used] = '\0';
+    close(pipefd[0]);
+
+    int status;
+    waitpid(pid, &status, 0);
+    if(WIFEXITED(status) && WEXITSTATUS(status) == 0){
+        //I am assuming the package exists, since they need to be found with search first
+        return true;
+
+    } else {
+        printf("Exit status not successfull\n");
+        return false;
+    }
 }
 
 manager APTGETMana(void){
