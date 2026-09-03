@@ -28,12 +28,17 @@ package SearchNix(char searchString[]){
     return result;
 }
 
+bool InstallNix(char searchString[]){
+    printf("InstallNix is not implemented yet: %s\n", searchString);
+    return false;
+}
+
 bool DeleteNix(char searchString[]){
     printf("DeleteNix function is not implemented yet: %s\n", searchString);
     return false;
 }
 
 manager NIXMana(void){
-    manager nixMana = {"nix", UpdateNix, FindNix, SearchNix, DeleteNix};
+    manager nixMana = {"nix", UpdateNix, FindNix, SearchNix, InstallNix, DeleteNix};
     return nixMana;
 }

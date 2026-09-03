@@ -41,7 +41,7 @@ int main(int argc, char *argv[]){
                 printf("%s", helptext);
                 return 0;
             } else if(strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--version") == 0){
-                printf("%s", VERSION);
+                printf("%s\n", VERSION);
             }
         }
         

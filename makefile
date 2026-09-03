@@ -18,8 +18,8 @@ else
 	CFLAGS += $(DEBUG_FLAGS)
 endif
 
-SRC := $(wildcard src/*.c)
-OBJ := $(SRC:src/%.c=build/obj/%.o)
+SRC := $(wildcard src/*.c src/managers/*.c)
+OBJ := $(patsubst src/%.c,build/obj/%.o,$(SRC))
 DEP := $(OBJ:.o=.d)
 
 TARGET 	:= bin/mana
@@ -33,7 +33,7 @@ $(TARGET): $(OBJ)
 	$(CC) $(OBJ) -o $@
 
 build/obj/%.o: src/%.c
-	@mkdir -p build/obj
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(INCLUDES) -MMD -MP -c $< -o $@
 
 -include $(DEP)

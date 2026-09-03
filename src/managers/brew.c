@@ -28,12 +28,17 @@ package SearchBrew(char searchString[]){
     return result;
 }
 
+bool InstallBrew(char searchString[]){
+    printf("InstallBrew function is not implemented yet: %s\n", searchString);
+    return false;
+}
+
 bool DeleteBrew(char searchString[]){
     printf("DeleteBrew function is not implemented yet: %s\n", searchString);
     return false;
 }
 
 manager HOMEBREWMana(void){
-    manager brewMana = {"brew", UpdateBrew, FindBrew, SearchBrew, DeleteBrew};
+    manager brewMana = {"brew", UpdateBrew, FindBrew, SearchBrew, InstallBrew, DeleteBrew};
     return brewMana;
 }

@@ -28,12 +28,17 @@ package SearchNpm(char searchString[]){
     return result;
 }
 
+bool InstallNpm(char searchString[]){
+    printf("InstallNpm function is not implemented yet: %s\n", searchString);
+    return false;
+}
+
 bool DeleteNpm(char searchString[]){
     printf("DeleteNpm function is not implemented yet: %s\n", searchString);
     return false;
 }
 
 manager NPMMana(void){
-    manager npmMana = {"npm", UpdateNpm, FindNpm, SearchNpm, DeleteNpm};
+    manager npmMana = {"npm", UpdateNpm, FindNpm, SearchNpm, InstallNpm, DeleteNpm};
     return npmMana;
 }

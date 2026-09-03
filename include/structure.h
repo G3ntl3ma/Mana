@@ -2,20 +2,23 @@
 #ifndef STRUCTURE_H
 #define STRUCTURE_H
 
+#define NUM_MANAS 4
+#define BUFFER_SIZE 4096
 #include <stdbool.h>
 
 typedef struct package {
     char mana[25];
     char name[50];
-    char version[10];
+    char version[50];
 } package;
 
 typedef struct manager {
     char name[25];
     bool (*update)(void);
-    package (*find)(char *result, char searchstring[]);
-    package (*search)(char searchstring[]);
-    bool (*delete)(char searchstring[]);
+    package (*find)(char searchString[]);
+    package (*search)(char searchString[]);
+    bool (*install)(char searchString[]);
+    bool (*delete)(char searchString[]);
 } manager;
 
 #endif

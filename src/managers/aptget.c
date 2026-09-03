@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 #include "../include/structure.h"
 #include "../include/managers/aptget.h"
@@ -18,10 +19,10 @@ bool UpdateApt(void){
         return -1;
     } else if (pid == 0){
 
-        char *args[] = {"/usr/bin/apt-get", "update", "-y"};
+        char *args[] = {"/usr/bin/sudo", "apt-get", "update", "-y"};
         execv(args[0], args);
 
-        fprintf(stderr, "Error: update for apt-get failed");
+        fprintf(stderr, "Error: update for apt-get failed\n");
         exit(EXIT_FAILURE);
         return -1;
     } else {
@@ -39,7 +40,7 @@ bool UpdateApt(void){
 package FindApt(char searchstring[]){
     package result = {0};
     int pipefd[2];
-    result.mana = "apt";
+    strcpy(result.mana, "apt");
 
     if (pipe(pipefd) == -1){
         fprintf(stderr, "Error: pipe failed\n");
@@ -56,7 +57,7 @@ package FindApt(char searchstring[]){
 
     if (pid == 0){
         close(pipefd[0]);
-        if(dup2(pipefd[1], STDOUT_FILENO == -1)){
+        if(dup2(pipefd[1], STDOUT_FILENO) == -1){
             fprintf(stderr, "Error: dup2 failed\n");
             exit(EXIT_FAILURE);
         }
@@ -65,7 +66,7 @@ package FindApt(char searchstring[]){
         char *args[] = {
             "/usr/bin/dpkg-query",
             "-W",
-            "-f='${Package} ${Version}\n'",
+            "-f=${Package} ${Version}\n",
             searchstring,
             NULL
         };
@@ -76,19 +77,14 @@ package FindApt(char searchstring[]){
     }
 
     close(pipefd[1]);
-
-    char buf[4096];
-    ssize_t n;
+    char buf[BUFFER_SIZE] = {0};
     size_t used = 0;
-    char output[4096] = {0};
+    ssize_t n;
 
-    while ((n = read(pipefd[0], buf, sizeof(buf))) > 0){
-        if (used + (size_t)n >= sizeof(output)){
-            break;
-        }
-        memcpy(output + used, buf, (size_t)n);
+    while((n = read(pipefd[0], buf + used, sizeof(buf) - 1 - used)) > 0){
         used += (size_t)n;
     }
+    buf[used] = '\0';
     close(pipefd[0]);
 
     int status;
@@ -96,31 +92,120 @@ package FindApt(char searchstring[]){
     if(WIFEXITED(status) && WEXITSTATUS(status) == 0){
         
         //check if package has been found
-        if(strcmp(output[10], ":") == 0){
+        if(buf[10] == ':'){
             return result;
         }  else {
             int lenName = 0, lenVersion;
-            for(;strcmp(output[lenName], " ") != 0; lenName++){
+            for(; buf[lenName] != ' ' && lenName < BUFFER_SIZE; lenName++){
                 ;
             }
-            strncpy(result.name, output[0], lenName);
+            strncpy(result.name, &(buf[0]), lenName);
             strcat(result.name, "\0");
-            for(lenVersion = lenName; strcmp(output[lenVersion], "\n") != 0; lenVersion++){
+            
+            lenName++;
+            for(lenVersion = lenName; buf[lenVersion] != '\n'; lenVersion++){
                 ;
             }
-            strncpy(result.version, output[lenName], lenVersion);
+            strncpy(result.version, &(buf[lenName]), lenVersion);
             strcat(result.version, "\0");
+            return result;
         }
 
     } else {
-        return 0;
+        return result;
     }
 }
 
 package SearchApt(char searchString[]){
     package result = {0};
-    printf("SearchApt function is not implemented yet: %s\n", searchString);
-    return result;
+    int pipefd[2];
+    strcpy(result.mana, "apt");
+
+    if (pipe(pipefd) == -1){
+        fprintf(stderr, "Error: pipe failed\n");
+        return result;
+    }
+
+    pid_t pid = fork();
+    if(pid == -1){
+        fprintf(stderr, "Error: fork failed\n");
+        close(pipefd[0]);
+        close(pipefd[1]);
+        return result;
+    }
+
+    if (pid == 0){
+        close(pipefd[0]);
+        if(dup2(pipefd[1], STDOUT_FILENO) == -1){
+            fprintf(stderr, "Error: dup2 failed\n");
+            exit(EXIT_FAILURE);
+        }
+        close(pipefd[1]);
+
+        char *args[] = {
+            "/usr/bin/apt-cache",
+            "madison",
+            searchString,
+            NULL
+        };
+        execv(args[0], args);
+
+        fprintf(stderr, "Error: execv failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    close(pipefd[1]);
+    char buf[BUFFER_SIZE] = {0};
+    size_t used = 0;
+    ssize_t n;
+
+    while((n = read(pipefd[0], buf + used, sizeof(buf) - 1 - used)) > 0){
+        used += (size_t)n;
+    }
+    buf[used] = '\0';
+    close(pipefd[0]);
+
+    int status;
+    waitpid(pid, &status, 0);
+    if(WIFEXITED(status) && WEXITSTATUS(status) == 0){
+        
+        //check if package has been found
+        if(strncmp(buf, "N: Unable to locate package", 27) == 0){
+            printf("Strncmp is not working\n");
+            return result;
+        }  else {
+
+            int nameStart = 0, nameEnd, versionEnd;
+            for(; isspace(buf[nameStart]) && nameStart < BUFFER_SIZE; nameStart++){
+                ;
+            }
+            for(nameEnd = nameStart; !isspace(buf[nameEnd]); nameEnd++){
+                ;
+            }
+            strncpy(result.name, &(buf[nameStart]), nameEnd - nameStart);
+            strcat(result.name, "\0");
+            
+            for(++nameEnd; buf[nameEnd] == ' ' || buf[nameEnd] == '|'; nameEnd++){
+                ;
+            }
+
+            for(versionEnd = nameEnd; !isspace(buf[versionEnd]); versionEnd++){
+                ;
+            }
+            strncpy(result.version, &(buf[nameEnd]), versionEnd - nameEnd);
+            strcat(result.version, "\0");
+            return result;
+        }
+
+    } else {
+        printf("Exit status not successfull\n");
+        return result;
+    }
+}
+
+bool InstallApt(char searchString[]){
+    printf("InstallApt function is not implemented yet: %s\n", searchString);
+    return false;
 }
 
 bool DeleteApt(char searchString[]){
@@ -129,6 +214,6 @@ bool DeleteApt(char searchString[]){
 }
 
 manager APTGETMana(void){
-    manager aptMana = {"apt", UpdateApt, FindApt, SearchApt, DeleteApt};
+    manager aptMana = {"apt", UpdateApt, FindApt, SearchApt, InstallApt, DeleteApt};
     return aptMana;
 }
