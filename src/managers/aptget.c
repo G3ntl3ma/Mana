@@ -19,13 +19,14 @@ bool UpdateApt(void){
         return -1;
     } else if (pid == 0){
 
-        char *args[] = {"/usr/bin/sudo", "apt-get", "update", "-y"};
+        char *args[] = {"/usr/bin/sudo", "apt-get", "update", "-y", NULL};
         execv(args[0], args);
 
         fprintf(stderr, "Error: update for apt-get failed\n");
         exit(EXIT_FAILURE);
         return -1;
     } else {
+
     int status;
     waitpid(pid, &status, 0);
 
@@ -58,6 +59,10 @@ package FindApt(char searchstring[]){
     if (pid == 0){
         close(pipefd[0]);
         if(dup2(pipefd[1], STDOUT_FILENO) == -1){
+            fprintf(stderr, "Error: dup2 failed\n");
+            exit(EXIT_FAILURE);
+        }
+        if(dup2(pipefd[1], STDERR_FILENO) == -1){
             fprintf(stderr, "Error: dup2 failed\n");
             exit(EXIT_FAILURE);
         }
