@@ -21,7 +21,6 @@ bool UpdateBrew(void){
 
         char *args[] = {"/home/linuxbrew/.linuxbrew/bin/brew",
              "update",
-              "-y",
                NULL
             };
         execv(args[0], args);

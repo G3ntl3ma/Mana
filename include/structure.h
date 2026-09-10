@@ -2,7 +2,7 @@
 #ifndef STRUCTURE_H
 #define STRUCTURE_H
 
-#define NUM_MANAS 4
+#define NUM_MANAS 3
 #define BUFFER_SIZE 4096
 #include <stdbool.h>
 

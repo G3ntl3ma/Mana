@@ -169,7 +169,9 @@ package SearchApt(char searchString[]){
     }
     buf[used] = '\0';
     close(pipefd[0]);
-
+    if(buf[0] == '\0'){
+        return result;
+    }
     int status;
     waitpid(pid, &status, 0);
     if(WIFEXITED(status) && WEXITSTATUS(status) == 0){
